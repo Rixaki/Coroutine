@@ -1,9 +1,13 @@
 package ru.netology.coroutines.dto
 
-class AuthorWithPosts(
-    val author: Author,
-    val posts: List<Post>
+data class AuthorWithPosts(
+    private val author: Author,
+    private val posts: List<Post>
 ) {
+    fun getTempPosts(): List<Post>{
+        return posts
+    }
+
     override fun toString(): String {
         return posts.toString()
     }

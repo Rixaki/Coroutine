@@ -19,7 +19,11 @@ data class Post(
     val likedByMe: Boolean,
     val likes: Int = 0,
     var attachment: Attachment? = null,
-)
+){
+    override fun toString(): String {
+        return "Post #$id by author #$authorId"
+    }
+}
 
 data class Attachment(
     val url: String,

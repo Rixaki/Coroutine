@@ -133,46 +133,48 @@ fun main() {
     with(CoroutineScope(EmptyCoroutineContext)) {
         launch {
             try {
-                val posts = getPosts(client)
                 val authors = HashSet<Author>()
-                var someAuthor = Author(-1)
+                var postAuthor = Author(-1)
+                var commentAuthor = Author(-1)
                 val authorsWithPosts = HashMap<Author, AuthorWithPosts>()
                 val authorsWithComments = HashMap<Author, AuthorWithComments>()
-                posts.map { post ->
+                val posts: MutableList<PostWithComments> = emptyList<PostWithComments>().toMutableList()
+                getPosts(client).forEach { post ->
                     val postsCoroutine = async {
-                        someAuthor =
+                        postAuthor =
                             authorBySetOrClient(client, post.authorId, authors)//exchange memory to client call count
 
-                        //if (!authorsWithPosts.containsKey(someAuthor)) {
-                        val postsByAuthor = posts.filter { it.authorId == someAuthor.id }
-                        authorsWithPosts[someAuthor] = AuthorWithPosts(someAuthor, postsByAuthor)
-                        //}
+                        val sumOfPosts = (authorsWithPosts[postAuthor]?.getTempPosts() ?: emptyList()) + (listOf(post))
+                        authorsWithPosts[postAuthor] = AuthorWithPosts(postAuthor, sumOfPosts)
                     }
 
                     val commentsCoroutine = async{
                         //COMMENTS PART:
-                        val commentsInPost = getComments(client, post.id)
-
-                        commentsInPost.map { comment ->
-                                someAuthor = authorBySetOrClient(
+                        val commentsInPost = getComments(client, post.id).map { comment ->
+                                commentAuthor = authorBySetOrClient(
                                     client,
                                     comment.authorId,
                                     authors
                                 )//exchange memory to client call count
 
-                                //if (!authorsWithComments.containsKey(someAuthor)) {
-                                authorsWithComments[someAuthor] = AuthorWithComments(someAuthor, commentsInPost
-                                    .filter { it.authorId == someAuthor.id })
-                                //}
+                            val sumOfComments = (authorsWithComments[commentAuthor]?.getTempComments() ?: emptyList()) + listOf(comment)
+                            authorsWithComments[commentAuthor] = AuthorWithComments(commentAuthor, sumOfComments)
+
+                            CommentWithAuthor(author = commentAuthor, comment = comment)//comment mapping
                             }
+                        posts += listOf(PostWithComments(
+                            post = PostWithAuthor(post = post, author = postAuthor),
+                            comments = commentsInPost)
+                        )
                     }
-                    postsCoroutine.await()
-                    commentsCoroutine.await()
+                    listOf(postsCoroutine, commentsCoroutine).awaitAll()
                 }
                 println("authorWithPosts")
                 println(authorsWithPosts)
                 println("authorsWithComments")
                 println(authorsWithComments)
+                println("posts+comments WithAuthors")
+                println(posts)
             } catch (e: Exception) {
                 e.printStackTrace()
             }

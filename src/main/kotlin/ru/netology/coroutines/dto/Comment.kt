@@ -20,4 +20,8 @@ data class Comment(
     val published: Long,
     val likedByMe: Boolean,
     val likes: Int = 0,
-)
+){
+    override fun toString(): String {
+        return "Comment #$id by author #$authorId for post #$postId"
+    }
+}

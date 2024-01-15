@@ -30,6 +30,10 @@ data class Author(
 
         return id == other.id
     }
+
+    override fun toString(): String {
+        return "Author #$id ($name)"
+    }
 }
 
 fun Author(id: Long): Author {
